@@ -11,7 +11,9 @@ final int CONFIG_HEIGHT_PIXELS = 500;
  * is used as the multiplier for the number of pixels. (e.g, a canvas
  * of 1000x1000px with a scale factor of 5 gives a 5000x5000px image.
  */
-final int CONFIG_SCALE_FACTOR = 5;
+int CONFIG_SCALE_FACTOR = 10;
+int CONFIG_NUM_XTILES = 1;
+int CONFIG_NUM_YTILES = 2;
 
 /*
  * Gcode-generation settings. Edit these as per your needs.
@@ -96,6 +98,9 @@ void keyPressed() {
   case 'h':
     saveHighRes(CONFIG_SCALE_FACTOR);
     break;
+  case 't':
+      saveHighResTiled(CONFIG_SCALE_FACTOR, CONFIG_NUM_XTILES, CONFIG_NUM_YTILES);
+      break;
   case 'p':
     savePDF();
     break;
@@ -117,6 +122,7 @@ void keyPressed() {
     println("  n: Generate a new seeded image");
     println("  l: Save low-resolution image");
     println("  h: Save high-resolution image");
+    println("  t: Save tiled, high-resolution image");
     println("  p: Save PDF version");
     println("  s: Save SVG version");
     println("  g: Save Gcode for plotter");
@@ -142,6 +148,29 @@ void saveHighRes(int scaleFactor) {
   endRecord();
   hires.save(seed + "highres-" + seed + ".png");
   println("Finished");
+}
+
+void saveHighResTiled(int scaleFactor, int nxtiles, int nytiles) {
+  int tWidth = width / nxtiles;
+  int tHeight = height / nytiles;
+  for (int i = 0; i < nxtiles; i++) {
+    for (int j = 0; j < nytiles; j++) {
+      PGraphics hires = createGraphics(
+                        tWidth * scaleFactor,
+                        tHeight * scaleFactor,
+                        JAVA2D);
+      println("Saving high-resolution tile: " + j + ", " + i);
+      beginRecord(hires);
+      hires.scale(scaleFactor);
+      pushMatrix();
+      translate(- i * tWidth, - j * tHeight);
+      seededRender();
+      popMatrix();
+      endRecord();
+      hires.save(seed + "-tile-" + j + "-" + i + ".png");
+      println("Finished");
+    }
+  }
 }
 
 void savePDF() {
